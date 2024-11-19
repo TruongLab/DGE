@@ -1,0 +1,162 @@
+---
+title: "DGE"
+author: "Shean Fu Phen"
+date: "2024-11-18"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# Load required libraries
+# Install BiocManager if not already installed
+if (!requireNamespace("BiocManager", quietly = TRUE)) {
+  install.packages("BiocManager")
+}
+
+# Function to check and install packages
+install_if_missing <- function(pkg) {
+  if (!requireNamespace(pkg, quietly = TRUE)) {
+    if (pkg %in% c("DESeq2", "EnhancedVolcano")) {
+      BiocManager::install(pkg)
+    } else {
+      install.packages(pkg)
+    }
+  }
+}
+
+# List of required packages
+packages <- c("dplyr", "DESeq2", "tidyr", "reshape2", "EnhancedVolcano", "pheatmap")
+
+# Install missing packages
+sapply(packages, install_if_missing)
+
+# Load all packages
+invisible(lapply(packages, library, character.only = TRUE))
+
+```
+
+
+```{r}
+# Read the annotated Kallisto output
+kallisto_data1 <- read.csv("Kall_annotated_kallisto_output.csv")
+kallisto_data2 <- read.csv("Tomoki_Kall_annotated_kallisto_output.csv")
+#kallisto_data3 <- read.csv("/scratch/sp7512/RawData/Tomoki_Kall_annotated_kallisto_output.csv")
+
+# Combine the data frames using bind_rows
+kallisto_data <- bind_rows(kallisto_data1, kallisto_data2)
+```
+
+```{r}
+# Filter for the two SRA values of interest
+cell_values <- c("M0", "hMac")  # Replace with your SRA values
+filtered_data <- kallisto_data %>% filter(cell_identity %in% cell_values)
+
+# Verify the unique SRA values included
+print(unique(filtered_data$SRA))
+```
+
+```{r}
+# Pivot data to wide format using dcast
+count_matrix <- dcast(
+  filtered_data,
+  external_gene_name ~ SRA,
+  value.var = "est_counts",
+  fill = 0
+)
+
+# Convert to matrix
+rownames(count_matrix) <- count_matrix$external_gene_name
+count_matrix <- count_matrix %>% select(-external_gene_name) %>% as.matrix()
+
+# Check dimensions and column names
+print(dim(count_matrix))
+print(colnames(count_matrix))
+
+```
+
+```{r}
+# Prepare metadata: Map each sample to its condition
+col_data <- data.frame(
+  row.names = colnames(count_matrix),   # Match row names to column names of count_matrix
+  condition = c("hMac", "hMac", "hMac", "M0", "M0")  # Labels for each sample
+)
+
+# Convert condition to a factor and set reference level - c(1, 2) => + in 2 relative to 1 (so positive log2fcs refer to + in cell type 2)
+col_data$condition <- factor(col_data$condition, levels = c("M0", "hMac"))
+
+# Verify levels
+print(levels(col_data$condition))
+
+```
+
+
+```{r}
+# Create DESeq2 dataset
+dds <- DESeqDataSetFromMatrix(countData = count_matrix, colData = col_data, design = ~condition)
+
+# Run DESeq2 analysis
+dds <- DESeq(dds)
+
+# Extract results
+res <- results(dds)
+
+```
+
+```{r}
+# Extract results
+res <- results(dds)
+
+# Inspect summary of results
+summary(res)
+
+# Save results
+write.csv(as.data.frame(res), "deseq2_results.csv", row.names = TRUE)
+
+# Filter significant results (padj < 0.05)
+res_sig <- res %>%
+  as.data.frame() %>%
+  filter(padj < 0.05)
+
+# Save significant results
+write.csv(res_sig, "dge_significant_results.csv", row.names = TRUE)
+
+# Print top significant results
+print(head(res_sig))
+
+```
+
+
+```{r}
+EnhancedVolcano(
+  res,
+  lab = rownames(res),                 # Gene names
+  x = 'log2FoldChange',                # X-axis: Log2 fold change
+  y = 'pvalue',                        # Y-axis: P-value
+  pCutoff = 0.01,                      # Adjusted p-value cutoff
+  FCcutoff = 1,                        # Fold-change cutoff
+  title = "Volcano Plot of DESeq2 Results",
+  subtitle = "Differential Gene Expression",
+  xlab = bquote(~Log[2]~ "Fold Change"),
+  ylab = bquote(~-Log[10]~ "P-value"),
+  pointSize = 2,                       # Adjust point size
+  labSize = 3,                          # Adjust label 
+  ylim = c(0, 35)                      # Expand the y-axis
+)
+
+# Save the plot with more space
+ggsave("volcano_plot_large.png", plot = last_plot(), width = 12, height = 10, dpi = 300)
+```
+
+```{r}
+# Set reference level for condition
+col_data$condition <- factor(col_data$condition, levels = c("M0", "hMac"))
+
+# Verify levels
+levels(col_data$condition)
+
+```
+
+
