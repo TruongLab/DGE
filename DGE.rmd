@@ -41,8 +41,8 @@ invisible(lapply(packages, library, character.only = TRUE))
 
 ```{r}
 # Read the annotated Kallisto output
-kallisto_data1 <- read.csv("Kall_annotated_kallisto_output.csv")
-kallisto_data2 <- read.csv("Tomoki_Kall_annotated_kallisto_output.csv")
+kallisto_data1 <- read.csv("../files/Kall_annotated_kallisto_output.csv")
+kallisto_data2 <- read.csv("../files/Tomoki_Kall_annotated_kallisto_output.csv")
 #kallisto_data3 <- read.csv("/scratch/sp7512/RawData/Tomoki_Kall_annotated_kallisto_output.csv")
 
 # Combine the data frames using bind_rows
@@ -113,7 +113,7 @@ res <- results(dds)
 summary(res)
 
 # Save results
-write.csv(as.data.frame(res), "deseq2_results.csv", row.names = TRUE)
+write.csv(as.data.frame(res), "../DGE_outputs/deseq2_results.csv", row.names = TRUE)
 
 # Filter significant results (padj < 0.05)
 res_sig <- res %>%
@@ -121,7 +121,7 @@ res_sig <- res %>%
   filter(padj < 0.05)
 
 # Save significant results
-write.csv(res_sig, "dge_significant_results.csv", row.names = TRUE)
+write.csv(res_sig, "../DGE_outputs/dge_significant_results.csv", row.names = TRUE)
 
 # Print top significant results
 print(head(res_sig))
@@ -135,7 +135,7 @@ EnhancedVolcano(
   lab = rownames(res),                 # Gene names
   x = 'log2FoldChange',                # X-axis: Log2 fold change
   y = 'pvalue',                        # Y-axis: P-value
-  pCutoff = 0.01,                      # Adjusted p-value cutoff
+  pCutoff = 0.05,                      # Adjusted p-value cutoff
   FCcutoff = 1,                        # Fold-change cutoff
   title = "Volcano Plot of DESeq2 Results",
   subtitle = "Differential Gene Expression",
@@ -147,7 +147,7 @@ EnhancedVolcano(
 )
 
 # Save the plot with more space
-ggsave("volcano_plot_large.png", plot = last_plot(), width = 12, height = 10, dpi = 300)
+ggsave("../DGE_outputs/volcano_plot_large.png", plot = last_plot(), width = 12, height = 10, dpi = 300)
 ```
 
 ```{r}
