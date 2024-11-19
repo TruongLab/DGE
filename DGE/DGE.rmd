@@ -51,7 +51,7 @@ kallisto_data <- bind_rows(kallisto_data1, kallisto_data2)
 
 ```{r}
 # Filter for the two SRA values of interest
-cell_values <- c("M0", "hMac")  # Replace with your SRA values
+cell_values <- c("M0", "hMac")  # Replace with your cell identities!
 filtered_data <- kallisto_data %>% filter(cell_identity %in% cell_values)
 
 # Verify the unique SRA values included
@@ -81,7 +81,7 @@ print(colnames(count_matrix))
 # Prepare metadata: Map each sample to its condition
 col_data <- data.frame(
   row.names = colnames(count_matrix),   # Match row names to column names of count_matrix
-  condition = c("hMac", "hMac", "hMac", "M0", "M0")  # Labels for each sample
+  condition = c("hMac", "hMac", "hMac", "M0", "M0")  # Labels for each sample. This should be updated based on the column names printed in the previous code block.
 )
 
 # Convert condition to a factor and set reference level - c(1, 2) => + in 2 relative to 1 (so positive log2fcs refer to + in cell type 2)
