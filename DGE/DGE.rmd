@@ -52,7 +52,7 @@ kallisto_data <- bind_rows(kallisto_data1, kallisto_data2)
 
 ```{r}
 # Filter for the two SRA values of interest
-cell_values <- c("hiPSC", "hMac")  # Replace with your cell identities!
+cell_values <- c("M0", "hMac")  # Replace with your cell identities!
 filtered_data <- kallisto_data %>% filter(cell_identity %in% cell_values)
 
 # Verify the unique SRA values included
@@ -82,10 +82,10 @@ print(colnames(count_matrix))
 # Prepare metadata: Map each sample to its condition
 col_data <- data.frame(
   row.names = colnames(count_matrix),   # Match row names to column names of count_matrix
-  condition = c("hMac", "hMac", "hMac", "hiPSC", "hiPSC", "hiPSC"))
+  condition = c("hMac", "hMac", "hMac", "M0", "M0"))
 
 # Convert condition to a factor and set reference level - c(1, 2) => + in 2 relative to 1 (so positive log2fcs refer to + in cell type 2)
-col_data$condition <- factor(col_data$condition, levels = c("hiPSC", "hMac"))
+col_data$condition <- factor(col_data$condition, levels = c("M0", "hMac"))
 
 # Verify levels
 print(levels(col_data$condition))
@@ -113,7 +113,7 @@ res <- results(dds)
 summary(res)
 
 # Save results
-write.csv(as.data.frame(res), "../DGE_outputs/deseq2_results.csv", row.names = TRUE)
+write.csv(as.data.frame(res), "../DGE_outputs/deseq2_results_M0treat_vshMac.csv", row.names = TRUE)
 
 # Filter significant results (padj < 0.05)
 res_sig <- res %>%
@@ -121,7 +121,7 @@ res_sig <- res %>%
   filter(padj < 0.05)
 
 # Save significant results
-write.csv(res_sig, "../DGE_outputs/dge_significant_results.csv", row.names = TRUE)
+write.csv(res_sig, "../DGE_outputs/dge_significant_results_M0treat_vshMac.csv", row.names = TRUE)
 
 # Print top significant results
 print(head(res_sig))
@@ -137,13 +137,13 @@ EnhancedVolcano(
   y = 'pvalue',                        # Y-axis: P-value
   pCutoff = 0.05,                      # Adjusted p-value cutoff
   FCcutoff = 1,                        # Fold-change cutoff
-  title = "Volcano Plot of DESeq2 Results",
+  title = "Volcano Plot of DESeq2 Results M0treat_vshMac",
   subtitle = "Differential Gene Expression",
   xlab = bquote(~Log[2]~ "Fold Change"),
   ylab = bquote(~-Log[10]~ "P-value"),
   pointSize = 2,                       # Adjust point size
   labSize = 3,                          # Adjust label 
-  ylim = c(0, 8)                      # Expand the y-axis
+  ylim = c(0, 10.5)                      # Expand the y-axis
 )
 
 # Save the plot with more space
